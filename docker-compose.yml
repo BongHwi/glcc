@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Korean delivery tracker service (GraphQL)
+  delivery-tracker:
+    build:
+      context: ./backend/libs/delivery-tracker
+      dockerfile: Dockerfile
+    container_name: glcc-delivery-tracker
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    restart: unless-stopped
+    networks:
+      - glcc-network
+
+  # GLCC Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: glcc-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/glcc.db
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - SCHEDULER_INTERVAL_HOURS=1
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app
+    depends_on:
+      - delivery-tracker
+    restart: unless-stopped
+    networks:
+      - glcc-network
+
+  # Frontend Dashboard (Streamlit)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: glcc-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - glcc-network
+
+networks:
+  glcc-network:
+    driver: bridge
+
+volumes:
+  glcc-data:
