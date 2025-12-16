@@ -1,5 +1,5 @@
 # Use Playwright Python image for browser automation support
-FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+FROM --platform=linux/amd64 mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
 # Set working directory
 WORKDIR /app

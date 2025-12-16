@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # Korean delivery tracker service (GraphQL)
   delivery-tracker:
+    platform: linux/amd64
     build:
       context: ./backend/libs/delivery-tracker
       dockerfile: Dockerfile
@@ -17,12 +18,13 @@ services:
 
   # GLCC Backend API
   backend:
+    platform: linux/amd64
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: glcc-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=sqlite:///./data/glcc.db
       - API_HOST=0.0.0.0
@@ -41,12 +43,13 @@ services:
 
   # Frontend Dashboard (Streamlit)
   frontend:
+    platform: linux/amd64
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: glcc-frontend
     ports:
-      - "8501:8501"
+      - "${FRONTEND_PORT:-8501}:8501"
     environment:
       - BACKEND_URL=http://backend:8000
     depends_on:
