@@ -1,12 +1,10 @@
 #!/bin/bash
-# Build script for x86_64 architecture
-
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
+# Build script for Docker deployment
 
 # Clean up old containers and images
 docker compose down
 
-# Build with platform specification
+# Build fresh images
 docker compose build --no-cache
 
 # Start services

@@ -3,7 +3,6 @@ version: '3.8'
 services:
   # Korean delivery tracker service (GraphQL)
   delivery-tracker:
-    platform: linux/amd64
     build:
       context: ./backend/libs/delivery-tracker
       dockerfile: Dockerfile
@@ -18,7 +17,6 @@ services:
 
   # GLCC Backend API
   backend:
-    platform: linux/amd64
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -43,7 +41,6 @@ services:
 
   # Frontend Dashboard (Streamlit)
   frontend:
-    platform: linux/amd64
     build:
       context: ./frontend
       dockerfile: Dockerfile

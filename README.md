@@ -42,11 +42,10 @@ cd glcc
 
 3. Start all services:
 ```bash
-# Option 1: Using the build script (recommended for x86_64 servers)
+# Option 1: Using the build script (recommended)
 ./build.sh
 
-# Option 2: Manual build with platform specification
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
+# Option 2: Manual build
 docker compose up -d --build
 ```
 
