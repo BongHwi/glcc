@@ -36,19 +36,24 @@ cd glcc
 
 2. Configure environment variables:
 ```bash
-cp .env .env.local
-# Edit .env.local with your settings
+# Edit .env with your settings (optional - defaults are provided)
+# You can customize ports and other settings here
 ```
 
 3. Start all services:
 ```bash
-docker-compose up -d
+# Option 1: Using the build script (recommended for x86_64 servers)
+./build.sh
+
+# Option 2: Manual build with platform specification
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+docker compose up -d --build
 ```
 
 4. Access the services:
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Frontend Dashboard: http://localhost:8501
+- Backend API: http://localhost:8080 (or your BACKEND_PORT)
+- API Docs: http://localhost:8080/docs
+- Frontend Dashboard: http://localhost:8501 (or your FRONTEND_PORT)
 - Delivery Tracker: http://localhost:4000
 
 ## Configuration
@@ -64,6 +69,10 @@ DATABASE_URL=sqlite:///./glcc.db
 # API Settings
 API_HOST=0.0.0.0
 API_PORT=8000
+
+# Docker Port Mapping (host:container)
+BACKEND_PORT=8080
+FRONTEND_PORT=8501
 
 # Scheduler Settings
 SCHEDULER_INTERVAL_HOURS=1
