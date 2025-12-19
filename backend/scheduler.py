@@ -13,7 +13,7 @@ import logging
 from database import SessionLocal
 import crud
 from trackers.kr_adapter import track_kr
-from trackers.global_scraper import track_global
+from trackers.global_scraper import track_global_sync
 from notifications import notify_status_change, notify_delivery_complete, notify_error
 
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +44,7 @@ def refresh_all_packages():
                 if package.carrier.startswith("kr."):
                     result = track_kr(package.carrier, package.tracking_number)
                 elif package.carrier.startswith("global."):
-                    result = track_global(package.carrier, package.tracking_number)
+                    result = track_global_sync(package.carrier, package.tracking_number)
                 else:
                     logger.warning(f"Unknown carrier prefix: {package.carrier}")
                     continue

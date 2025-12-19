@@ -340,8 +340,8 @@ class GlobalScraper:
             }
 
 
-# Synchronous wrapper functions for easier use
-def track_global(carrier: str, tracking_number: str) -> Dict[str, Any]:
+# Async wrapper functions for easier use
+async def track_global(carrier: str, tracking_number: str) -> Dict[str, Any]:
     """
     Track package using global scraper
 
@@ -354,31 +354,58 @@ def track_global(carrier: str, tracking_number: str) -> Dict[str, Any]:
     """
     scraper = GlobalScraper()
 
-    async def _track():
-        try:
-            if carrier == "global.ups":
-                return await scraper.track_ups(tracking_number)
-            elif carrier == "global.fedex":
-                return await scraper.track_fedex(tracking_number)
-            elif carrier == "global.dhl":
-                return await scraper.track_dhl(tracking_number)
-            elif carrier == "global.chinapost":
-                return await scraper.track_chinapost(tracking_number)
-            elif carrier == "global.jppost":
-                return await scraper.track_jppost(tracking_number)
-            elif carrier == "global.sagawa":
-                return await scraper.track_sagawa(tracking_number)
-            else:
-                return {
-                    "success": False,
-                    "error": f"Unsupported carrier: {carrier}",
-                    "carrier": carrier,
-                    "tracking_number": tracking_number
-                }
-        finally:
-            await scraper._close_browser()
+    try:
+        if carrier == "global.ups":
+            return await scraper.track_ups(tracking_number)
+        elif carrier == "global.fedex":
+            return await scraper.track_fedex(tracking_number)
+        elif carrier == "global.dhl":
+            return await scraper.track_dhl(tracking_number)
+        elif carrier == "global.chinapost":
+            return await scraper.track_chinapost(tracking_number)
+        elif carrier == "global.jppost":
+            return await scraper.track_jppost(tracking_number)
+        elif carrier == "global.sagawa":
+            return await scraper.track_sagawa(tracking_number)
+        else:
+            return {
+                "success": False,
+                "error": f"Unsupported carrier: {carrier}",
+                "carrier": carrier,
+                "tracking_number": tracking_number
+            }
+    finally:
+        await scraper._close_browser()
 
-    return asyncio.run(_track())
+
+def track_global_sync(carrier: str, tracking_number: str) -> Dict[str, Any]:
+    """
+    Synchronous wrapper for track_global - for use in background threads/scheduler
+
+    Args:
+        carrier: Carrier code (e.g., 'global.ups', 'global.fedex')
+        tracking_number: Tracking number
+
+    Returns:
+        Dictionary with tracking information
+    """
+    import asyncio
+
+    # Create a new event loop for this thread
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If there's already a running loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(track_global(carrier, tracking_number))
+            loop.close()
+            return result
+        else:
+            return loop.run_until_complete(track_global(carrier, tracking_number))
+    except RuntimeError:
+        # No event loop exists, create one
+        return asyncio.run(track_global(carrier, tracking_number))
 
 
 def get_supported_global_carriers() -> Dict[str, Any]:

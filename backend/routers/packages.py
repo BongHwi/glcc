@@ -52,7 +52,7 @@ async def create_package(
         if package.carrier.startswith("kr."):
             result = track_kr(package.carrier, package.tracking_number)
         elif package.carrier.startswith("global."):
-            result = track_global(package.carrier, package.tracking_number)
+            result = await track_global(package.carrier, package.tracking_number)
         else:
             result = {"success": False, "error": "Unknown carrier prefix"}
 
@@ -152,7 +152,7 @@ async def refresh_all_packages(
             if package.carrier.startswith("kr."):
                 result = track_kr(package.carrier, package.tracking_number)
             elif package.carrier.startswith("global."):
-                result = track_global(package.carrier, package.tracking_number)
+                result = await track_global(package.carrier, package.tracking_number)
             else:
                 results["failed"] += 1
                 results["errors"].append({
@@ -203,7 +203,7 @@ async def track_package(
         if package.carrier.startswith("kr."):
             result = track_kr(package.carrier, package.tracking_number)
         elif package.carrier.startswith("global."):
-            result = track_global(package.carrier, package.tracking_number)
+            result = await track_global(package.carrier, package.tracking_number)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
