@@ -4,6 +4,11 @@ Self-hosted platform for tracking deliveries worldwide, integrating Korean and i
 
 ## Features
 
+- **Automatic Carrier Detection** 🆕
+  - Pattern-based tracking number recognition
+  - Supports 12+ carriers with configurable patterns
+  - Auto-detect API endpoint and UI integration
+  - Confidence levels (high/medium/low) for detection accuracy
 - **Hybrid Tracking Engine**
   - Korean carriers via delivery-tracker (GraphQL service)
   - International carriers via Playwright web scraping
@@ -14,7 +19,12 @@ Self-hosted platform for tracking deliveries worldwide, integrating Korean and i
 - **REST API**
   - Full CRUD operations for packages
   - Bulk refresh endpoint
+  - Carrier detection endpoint
   - Swagger documentation at `/docs`
+- **Streamlit Dashboard**
+  - Interactive web UI for package management
+  - Auto-detect carrier button
+  - Real-time status updates
 - **Docker Support**
   - Multi-container architecture
   - Easy deployment with docker-compose
@@ -90,10 +100,31 @@ TELEGRAM_CHAT_ID=your_chat_id
 
 ## API Usage
 
-### Register a Package
+### Auto-detect Carrier (New!)
+
+Automatically identify carrier from tracking number:
 
 ```bash
-curl -X POST "http://localhost:8000/packages" \
+curl -X POST "http://localhost:8080/carriers/detect" \
+  -H "Content-Type: application/json" \
+  -d '{"tracking_number": "EN387436585JP"}'
+```
+
+Response:
+```json
+{
+  "carrier": "global.jppost",
+  "confidence": "high",
+  "pattern_matched": "Ends with JP (e.g., EN123456789JP)",
+  "tracking_number": "EN387436585JP"
+}
+```
+
+### Register a Package
+
+With explicit carrier:
+```bash
+curl -X POST "http://localhost:8080/packages" \
   -H "Content-Type: application/json" \
   -d '{
     "tracking_number": "1234567890",
@@ -103,22 +134,38 @@ curl -X POST "http://localhost:8000/packages" \
   }'
 ```
 
+With auto-detection (carrier optional):
+```bash
+curl -X POST "http://localhost:8080/packages" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tracking_number": "EN387436585JP",
+    "alias": "Package from Japan"
+  }'
+```
+
 ### List All Packages
 
 ```bash
-curl "http://localhost:8000/packages"
+curl "http://localhost:8080/packages"
+```
+
+### List Supported Carriers
+
+```bash
+curl "http://localhost:8080/carriers/"
 ```
 
 ### Refresh All Packages
 
 ```bash
-curl -X POST "http://localhost:8000/packages/refresh"
+curl -X POST "http://localhost:8080/packages/refresh"
 ```
 
 ### Track Specific Package
 
 ```bash
-curl -X POST "http://localhost:8000/packages/1/track"
+curl -X POST "http://localhost:8080/packages/1/track"
 ```
 
 ## Supported Carriers
@@ -129,14 +176,33 @@ All carriers supported by [delivery-tracker](https://github.com/shlee322/deliver
 - CJ Logistics (`kr.cj`)
 - Hanjin (`kr.hanjin`)
 - Korea Post (`kr.epost`)
-- And many more...
+- Lotte (`kr.lotte`)
+- KD Express (`kr.kdexp`)
+- And more...
 
-### International Carriers (Playwright)
+### International Carriers (Playwright Web Scraping)
 
-Currently skeleton implementations:
-- UPS (`global.ups`)
-- FedEx (`global.fedex`) - planned
-- DHL (`global.dhl`) - planned
+**Fully Implemented:**
+- **China Post** (`global.chinapost`) - via 17track.net
+  - Pattern: Starts with RB/RC/RA/CP/LZ/ZC etc.
+- **Japan Post** (`global.jppost`) - via official tracking site
+  - Pattern: Ends with JP (e.g., EN123456789JP)
+- **Sagawa Express** (`global.sagawa`) - via official site
+  - Pattern: 10-12 digit numbers
+
+**Planned/Skeleton:**
+- UPS (`global.ups`) - Pattern: 1Z + 16 chars
+- FedEx (`global.fedex`) - Pattern: 12-15 digits
+- DHL (`global.dhl`) - Pattern: 10-11 digits
+
+### Carrier Auto-Detection
+
+The system can automatically detect carriers based on tracking number patterns:
+- **High confidence**: Unique patterns (e.g., ends with "JP" → Japan Post)
+- **Medium confidence**: Common prefixes (e.g., "1Z" → UPS)
+- **Low confidence**: Generic length patterns (e.g., 12 digits → might be FedEx)
+
+See `/carriers/` API endpoint for full pattern list.
 
 ## Development
 
@@ -173,16 +239,19 @@ glcc/
 │   ├── crud.py              # Database operations
 │   ├── scheduler.py         # Background jobs
 │   ├── notifications.py     # Telegram notifications
+│   ├── carrier_detector.py  # Auto-detection logic (NEW)
 │   ├── trackers/
 │   │   ├── kr_adapter.py    # Korean tracker adapter
 │   │   └── global_scraper.py # International scraper
 │   ├── routers/
-│   │   └── packages.py      # API endpoints
+│   │   ├── packages.py      # Package API endpoints
+│   │   └── carriers.py      # Carrier detection API (NEW)
 │   └── libs/
 │       └── delivery-tracker/ # Submodule
 ├── frontend/
 │   └── app.py              # Streamlit dashboard
-└── docker-compose.yml      # Service orchestration
+├── docker-compose.yml      # Service orchestration
+└── README.md               # This file
 ```
 
 ## License

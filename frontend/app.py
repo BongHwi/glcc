@@ -85,6 +85,18 @@ def get_scheduler_status():
     except Exception as e:
         return None
 
+def detect_carrier_from_tracking(tracking_number):
+    """Auto-detect carrier from tracking number"""
+    try:
+        response = requests.post(
+            f"{BACKEND_URL}/carriers/detect",
+            json={"tracking_number": tracking_number}
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return None
+
 # Title
 st.title("📦 GLCC - Global Logistics Command Center")
 st.markdown("Self-hosted platform for tracking deliveries worldwide")
@@ -194,28 +206,68 @@ with tab1:
 with tab2:
     st.subheader("Add New Package")
 
+    # Initialize session state for auto-detection
+    if 'detected_carrier' not in st.session_state:
+        st.session_state.detected_carrier = None
+    if 'detection_message' not in st.session_state:
+        st.session_state.detection_message = None
+
+    # Auto-detect section (outside form for reactivity)
+    tracking_number_input = st.text_input(
+        "Tracking Number *",
+        placeholder="Enter tracking number (e.g., EN387436585JP)",
+        key="tracking_input"
+    )
+
+    col_detect1, col_detect2 = st.columns([1, 3])
+    with col_detect1:
+        if st.button("🔍 Auto-detect Carrier", disabled=not tracking_number_input or len(tracking_number_input) < 5):
+            with st.spinner("Detecting carrier..."):
+                detection = detect_carrier_from_tracking(tracking_number_input)
+                if detection and detection.get('carrier'):
+                    st.session_state.detected_carrier = detection['carrier']
+                    st.session_state.detection_message = f"✅ Detected: {detection['carrier']} ({detection.get('confidence', 'unknown')} confidence)"
+                else:
+                    st.session_state.detected_carrier = None
+                    st.session_state.detection_message = "⚠️ Could not auto-detect carrier. Please select manually."
+
+    with col_detect2:
+        if st.session_state.detection_message:
+            if "✅" in st.session_state.detection_message:
+                st.success(st.session_state.detection_message)
+            else:
+                st.warning(st.session_state.detection_message)
+
+    # Form for package details
     with st.form("add_package_form"):
         col1, col2 = st.columns(2)
 
         with col1:
-            tracking_number = st.text_input(
-                "Tracking Number *",
-                placeholder="1234567890"
-            )
+            # Carrier list (updated with new carriers)
+            carrier_list = [
+                "kr.cj",
+                "kr.hanjin",
+                "kr.epost",
+                "kr.lotte",
+                "kr.kdexp",
+                "kr.cjlogistics",
+                "global.ups",
+                "global.fedex",
+                "global.dhl",
+                "global.chinapost",
+                "global.jppost",
+                "global.sagawa"
+            ]
+
+            # Pre-select detected carrier if available
+            default_index = 0
+            if st.session_state.detected_carrier and st.session_state.detected_carrier in carrier_list:
+                default_index = carrier_list.index(st.session_state.detected_carrier)
 
             carrier = st.selectbox(
                 "Carrier *",
-                [
-                    "kr.cj",
-                    "kr.hanjin",
-                    "kr.epost",
-                    "kr.lotte",
-                    "kr.kdexp",
-                    "kr.cjlogistics",
-                    "global.ups",
-                    "global.fedex",
-                    "global.dhl"
-                ]
+                carrier_list,
+                index=default_index
             )
 
         with col2:
@@ -226,23 +278,27 @@ with tab2:
 
             notify_enabled = st.checkbox("Enable Notifications", value=True)
 
+        st.caption("💡 Tip: Use 'Auto-detect Carrier' button above to automatically identify the carrier")
         st.caption("Korean carriers (kr.*) require delivery-tracker service running on port 4000")
 
         submitted = st.form_submit_button("➕ Add Package", use_container_width=True)
 
         if submitted:
-            if not tracking_number or not carrier:
+            if not tracking_number_input or not carrier:
                 st.error("Please fill in all required fields")
             else:
                 with st.spinner("Adding package..."):
                     success, message = add_package(
-                        tracking_number,
+                        tracking_number_input,
                         carrier,
                         alias if alias else None,
                         notify_enabled
                     )
                     if success:
                         st.success(message)
+                        # Clear session state
+                        st.session_state.detected_carrier = None
+                        st.session_state.detection_message = None
                         st.rerun()
                     else:
                         st.error(message)

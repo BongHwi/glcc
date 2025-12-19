@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from database import init_db
-from routers import packages
+from routers import packages, carriers
 from scheduler import start_scheduler, stop_scheduler, get_scheduler_status
 
 app = FastAPI(
@@ -35,6 +35,7 @@ async def shutdown_event():
 
 # Include routers
 app.include_router(packages.router)
+app.include_router(carriers.router)
 
 @app.get("/")
 async def root():

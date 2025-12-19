@@ -20,8 +20,22 @@ async def create_package(
     """
     Register a new package for tracking
 
-    Automatically performs initial tracking on registration
+    Automatically performs initial tracking on registration.
+    If carrier is not provided, will attempt to auto-detect from tracking number.
     """
+    # Auto-detect carrier if not provided
+    if not package.carrier:
+        from carrier_detector import detect_carrier
+        detection = detect_carrier(package.tracking_number)
+
+        if not detection.get("carrier"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not auto-detect carrier from tracking number. Please specify carrier manually."
+            )
+
+        package.carrier = detection["carrier"]
+
     # Check if package already exists
     existing = crud.get_package_by_tracking_number(db, package.tracking_number)
     if existing:
