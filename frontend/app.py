@@ -195,12 +195,13 @@ with tab1:
 
                 # Show tracking data if available
                 if package.get('tracking_data'):
-                    with st.expander("📄 Raw Tracking Data"):
-                        try:
-                            data = json.loads(package['tracking_data'])
-                            st.json(data)
-                        except:
-                            st.text(package['tracking_data'])
+                    st.divider()
+                    st.caption("📄 Raw Tracking Data")
+                    try:
+                        data = json.loads(package['tracking_data'])
+                        st.json(data)
+                    except:
+                        st.text(package['tracking_data'])
 
 # Tab 2: Add Package
 with tab2:
